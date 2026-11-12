@@ -137,7 +137,7 @@ footer{text-align:center;font-size:12px;color:#667085;padding:0 16px 30px}
 </main>
 <footer>Windrose Giants Antwerp · Deze wedstrijd wordt gesponsord door Decathlon · Vragen? <a href="mailto:show@antwerpgiants.be">show@antwerpgiants.be</a></footer>
 
-<script src="claim.js?v=1"></script>
+<script src="claim.js?v=2"></script>
 <script>
 (function(){
 var FB={apiKey:"AIzaSyAoVJMKiuVDSqqyMW4vE6dbbcZ5SW5IUSE",authDomain:"giants-veiling.firebaseapp.com",
@@ -153,22 +153,22 @@ var Q=[
 var $=function(id){return document.getElementById(id)};
 var db=null,soldOut=false,qi=0,busy=false;
 function show(id){["s-start","s-quiz","s-form","s-win","s-out"].forEach(function(s){$(s).classList.toggle("hide",s!==id)});window.scrollTo({top:0,behavior:"smooth"})}
-function setCount(n){var left=Sportdag.ticketsLeft(n);soldOut=left<=0;
+function setCount(n){var left=DecathlonTix.ticketsLeft(n);soldOut=left<=0;
   $("counter").textContent=soldOut?"Alle tickets zijn weg!":"Nog "+left+" van de 100 tickets beschikbaar";
   $("bar").style.width=left+"%";
-  if(soldOut && $("s-win").classList.contains("hide") && !localStorage.getItem("sportdag_code")) show("s-out");
+  if(soldOut && $("s-win").classList.contains("hide") && !localStorage.getItem("decathlon1711_code")) show("s-out");
 }
 function load(src){return new Promise(function(r,j){var s=document.createElement("script");s.src=src;s.onload=r;s.onerror=j;document.head.appendChild(s)})}
 var ready=load("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js")
  .then(function(){return load("https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js")})
  .then(function(){firebase.initializeApp(FB);db=firebase.database();if(/[?&]emu=1/.test(location.search))db.useEmulator("127.0.0.1",9000);
-   db.ref("sportdag/taken").on("value",function(s){setCount(Object.keys(s.val()||{}).length)});
+   db.ref("decathlon1711/taken").on("value",function(s){setCount(Object.keys(s.val()||{}).length)});
    return db;});
 
 function showWin(code,existing){$("code").textContent=code;$("code2").textContent=code;
   $("winTitle").textContent=existing?"Je had al een code! 🙌":"Proficiat! 🏆";
   $("winIntro").textContent=existing?"Met dit e-mailadres kreeg je al een code. Hier is ze nog eens:":"Dit is jouw persoonlijke code:";
-  localStorage.setItem("sportdag_code",code);show("s-win")}
+  localStorage.setItem("decathlon1711_code",code);show("s-win")}
 
 function renderQ(){var x=Q[qi];$("prog").innerHTML=Q.map(function(_,k){return '<b class="'+(k<=qi?"on":"")+'"></b>'}).join("");
   $("qn").textContent="Vraag "+(qi+1)+" van "+Q.length;$("q").textContent=x.q;$("qmsg").textContent="";$("qmsg").className="msg";
@@ -181,18 +181,18 @@ function renderQ(){var x=Q[qi];$("prog").innerHTML=Q.map(function(_,k){return '<
     $("opts").appendChild(b)})}
 
 $("go").onclick=function(){if(soldOut){show("s-out");return}qi=0;renderQ();show("s-quiz")};
-$("f").onsubmit=function(e){e.preventDefault();var n=$("name").value.trim(),m=Sportdag.normEmail($("email").value);
+$("f").onsubmit=function(e){e.preventDefault();var n=$("name").value.trim(),m=DecathlonTix.normEmail($("email").value);
   $("ferr").textContent="";
   if(n.length<2){$("ferr").textContent="Vul even je naam in.";return}
-  if(!Sportdag.validEmail(m)){$("ferr").textContent="Dat e-mailadres lijkt niet te kloppen.";return}
+  if(!DecathlonTix.validEmail(m)){$("ferr").textContent="Dat e-mailadres lijkt niet te kloppen.";return}
   var btn=$("claimBtn");btn.disabled=true;btn.textContent="Even geduld…";
-  ready.then(function(db){return Sportdag.claim(db,n,m,{serverTimestamp:firebase.database.ServerValue.TIMESTAMP})})
+  ready.then(function(db){return DecathlonTix.claim(db,n,m,{serverTimestamp:firebase.database.ServerValue.TIMESTAMP})})
    .then(function(r){if(r.status==="soldout")show("s-out");else showWin(r.code,r.status==="existing")})
    .catch(function(err){$("ferr").textContent="Oei, dat lukte niet. Controleer je internet en probeer opnieuw.";console.error(err)})
    .then(function(){btn.disabled=false;btn.textContent="Geef mij mijn tickets!"})};
 $("copy").onclick=function(){var c=$("code").textContent;(navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject())
   .then(function(){$("copy").textContent="Gekopieerd ✓"},function(){$("copy").textContent=c})};
-var saved=localStorage.getItem("sportdag_code");if(saved)showWin(saved,true);
+var saved=localStorage.getItem("decathlon1711_code");if(saved)showWin(saved,true);
 })();
 </script>
 </body>
