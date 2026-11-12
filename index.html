@@ -140,7 +140,7 @@ footer{text-align:center;font-size:12px;color:#667085;padding:0 16px 30px}
 </main>
 <footer>Windrose Giants Antwerp · SPORT NIGHT powered by Decathlon · Vragen? <a href="mailto:show@antwerpgiants.be">show@antwerpgiants.be</a></footer>
 
-<script src="claim.js?v=3"></script>
+<script src="claim.js?v=4"></script>
 <script>
 (function(){
 var FB={apiKey:"AIzaSyAoVJMKiuVDSqqyMW4vE6dbbcZ5SW5IUSE",authDomain:"giants-veiling.firebaseapp.com",
@@ -164,7 +164,8 @@ function setCount(n){var left=DecathlonTix.ticketsLeft(n);soldOut=left<=0;
 function load(src){return new Promise(function(r,j){var s=document.createElement("script");s.src=src;s.onload=r;s.onerror=j;document.head.appendChild(s)})}
 var ready=load("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js")
  .then(function(){return load("https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js")})
- .then(function(){firebase.initializeApp(FB);db=firebase.database();if(/[?&]emu=1/.test(location.search))db.useEmulator("127.0.0.1",9000);
+ .then(function(){return load("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js")})
+ .then(function(){firebase.initializeApp(FB);db=firebase.database();if(/[?&]emu=1/.test(location.search)){db.useEmulator("127.0.0.1",9000);firebase.auth().useEmulator("http://127.0.0.1:9099",{disableWarnings:true})}
    db.ref("decathlon1711/taken").on("value",function(s){setCount(Object.keys(s.val()||{}).length)});
    return db;});
 
@@ -189,7 +190,8 @@ $("f").onsubmit=function(e){e.preventDefault();var n=$("name").value.trim(),m=De
   if(n.length<2){$("ferr").textContent="Vul even je naam in.";return}
   if(!DecathlonTix.validEmail(m)){$("ferr").textContent="Dat e-mailadres lijkt niet te kloppen.";return}
   var btn=$("claimBtn");btn.disabled=true;btn.textContent="Even geduld…";
-  ready.then(function(db){return DecathlonTix.claim(db,n,m,{serverTimestamp:firebase.database.ServerValue.TIMESTAMP})})
+  ready.then(function(db){var a=firebase.auth();return (a.currentUser?Promise.resolve({user:a.currentUser}):a.signInAnonymously()).then(function(c){
+     return DecathlonTix.claim(db,n,m,{serverTimestamp:firebase.database.ServerValue.TIMESTAMP,uid:c.user.uid})})})
    .then(function(r){if(r.status==="soldout")show("s-out");else showWin(r.code,r.status==="existing")})
    .catch(function(err){$("ferr").textContent="Oei, dat lukte niet. Controleer je internet en probeer opnieuw.";console.error(err)})
    .then(function(){btn.disabled=false;btn.textContent="Geef mij mijn tickets!"})};

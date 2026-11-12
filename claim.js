@@ -20,18 +20,24 @@
     var s = await db.ref("decathlon1711/codes/" + i).once("value");
     return s.val();
   }
+  // bestaande winnaar (ander toestel): registreer jezelf als lezer van je eigen code
+  async function readOwn(db, uid, i, h) {
+    await db.ref("decathlon1711/readers/" + i + "/" + uid).set(h);
+    return readCode(db, i);
+  }
 
   // Geeft {status:"new"|"existing"|"soldout", code, index}
   async function claim(db, name, email, opts) {
     opts = opts || {};
-    var ts = opts.serverTimestamp;
+    var ts = opts.serverTimestamp, uid = opts.uid;
+    if (!uid) throw new Error("auth");
     email = normEmail(email); name = String(name || "").trim().slice(0, 80);
     if (name.length < 2) throw new Error("naam");
     if (!validEmail(email)) throw new Error("email");
     var h = await sha256hex(SALT + email);
     for (var attempt = 0; attempt < 12; attempt++) {
       var ex = (await db.ref("decathlon1711/claims/" + h).once("value")).val();
-      if (ex && ex.i) return { status: "existing", code: await readCode(db, ex.i), index: ex.i };
+      if (ex && ex.i) return { status: "existing", code: await readOwn(db, uid, ex.i, h), index: ex.i };
       var taken = (await db.ref("decathlon1711/taken").once("value")).val() || {};
       var free = [];
       for (var k = 0; k < POOL; k++) if (!taken[pad(k)]) free.push(pad(k));
@@ -43,6 +49,7 @@
       u["byIndex/" + i] = h;
       u["claims/" + h] = { i: i, t: ts };
       u["log/" + i] = { name: name, email: email, t: ts };
+      u["readers/" + i + "/" + uid] = h;
       try {
         await db.ref("decathlon1711").update(u);
         return { status: "new", code: await readCode(db, i), index: i };
